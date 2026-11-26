@@ -1,0 +1,36 @@
+## Interface: 16001
+## Title: PaladinGod
+## Notes: Quality of life for paladins: clickable reminders for your aura, blessing, Righteous Fury, seal and gathering tracking, who in your group lacks your blessing, a small animation for each proc, big cooldowns ready, your effects on your enemies, a shield bar, a swing timer, Hammer of Wrath, Exorcism and Hammer of Justice alerts, range and aggro. /paladingod
+## Notes-esES: Mejoras para paladines: avisos clicables de aura, bendición, Furia recta, sello y rastreo de recolección, quién de tu grupo no lleva tu bendición, una animación pequeña por cada proc, reutilizaciones grandes listas, tus efectos sobre los enemigos, barra de escudos, barra de golpe, avisos de Martillo de cólera, Exorcismo y Martillo de justicia, distancia y agro. /paladingod
+## Notes-esMX: Mejoras para paladines: avisos clicables de aura, bendición, Furia recta, sello y rastreo de recolección, quién de tu grupo no lleva tu bendición, una animación pequeña por cada proc, reutilizaciones grandes listas, tus efectos sobre los enemigos, barra de escudos, barra de golpe, avisos de Martillo de cólera, Exorcismo y Martillo de justicia, distancia y agro. /paladingod
+## Author: wowforeverplus
+## Version: 1.0.0
+## Category: Class
+## SavedVariables: PaladinGodDB
+## SavedVariablesPerCharacter: PaladinGodCharDB
+## IconTexture: Interface\AddOns\PaladinGod\media\icon
+## X-License: GPL-3.0-or-later
+## X-Curse-Project-ID: 1832579
+
+Locales.lua
+Init.lua
+Gathering.lua
+Reagents.lua
+GroupBuffs.lua
+Repair.lua
+Reminders.lua
+Buffs.lua
+Seal.lua
+Gather.lua
+GroupRow.lua
+Blessings.lua
+Procs.lua
+Shield.lua
+Swing.lua
+Execute.lua
+Cooldowns.lua
+Debuffs.lua
+Respec.lua
+Range.lua
+MinimapButton.lua
+Options.lua
