@@ -466,7 +466,9 @@ local function UpdateFood()
 		Place(foodRow)
 	else
 		foodRow:Hide()
-		menu:Hide()
+		-- The list is made of the game's secure buttons: in a fight it can't be hidden, and it was
+		-- already closed as the fight started (PLAYER_REGEN_DISABLED)
+		if not InCombatLockdown() then menu:Hide() end
 	end
 	for i, r in ipairs(reagents) do
 		local b = ReagentRow(i)

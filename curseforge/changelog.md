@@ -1,3 +1,7 @@
+# 1.0.1
+
+- Fixed an "action blocked" error in combat: the game doesn't let addons close the XP food list during a fight. It's closed as the fight starts, so it no longer tries again.
+
 # 1.0.0
 
 - First release, in English and Spanish:

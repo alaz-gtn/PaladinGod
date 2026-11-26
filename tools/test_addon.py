@@ -247,6 +247,19 @@ local function Texture() local t = { shown = true } setmetatable(t, { __index = 
   elseif k == "CreateAnimationGroup" then return CreateFrame("Frame") end
 end end }) return t end
 NAMED = {}
+-- Secure frames, and what an addon tried to do to them in a fight
+SECURE, BLOCKED = {}, {}
+function Protected(frame)
+  for _, s in ipairs(SECURE) do
+    local p = s
+    while p do
+      if rawequal(p, frame) then return true end
+      p = rawget(p, "parent")
+    end
+  end
+  return false
+end
+
 function CreateFrame(kind, name, parent, template)
   local f = { scripts = {}, events = {}, kind = kind, parent = parent, template = template, shown = true, attrs = {}, width = 100 }
   setmetatable(f, { __index = function(_, k)
@@ -315,6 +328,23 @@ function CreateFrame(kind, name, parent, template)
   end
   FRAMES = FRAMES or {} table.insert(FRAMES, f)
   if name then NAMED[name] = f end
+  -- As in the game: in a fight a secure button, and any frame holding one, can't be shown, hidden,
+  -- moved or changed by an addon (the game blocks it). Recorded in BLOCKED, the tests fail on it
+  if type(template) == "string" and template:find("Secure") then SECURE[#SECURE + 1] = f end
+  for _, method in ipairs({ "Show", "Hide", "SetShown", "SetAttribute", "SetPoint", "ClearAllPoints", "SetParent", "SetSize" }) do
+    local orig = rawget(f, method)
+    if orig then
+      f[method] = function(self, ...)
+        if InCombatLockdown() and not ENTERING_COMBAT and Protected(self) then
+          local info = debug.getinfo(2, "Sl")
+          if info and info.source:sub(1, 1) == "@" then
+            BLOCKED[#BLOCKED + 1] = info.source:sub(2) .. ":" .. tostring(info.currentline) .. " " .. method .. " on " .. tostring(name or "a secure frame")
+          end
+        end
+        return orig(self, ...)
+      end
+    end
+  end
   return f
 end
 -- Font objects: one per name, the last font set on it counts
@@ -369,6 +399,27 @@ function ShownIcons(parent)
 end
 function Same(a, b) return rawequal(a, b) end
 function Fire(event, ...) for _, f in ipairs(FRAMES) do if f.events[event] and f.scripts.OnEvent then f.scripts.OnEvent(f, event, ...) end end end
+''')
+
+lua.execute('''
+-- PLAYER_REGEN_DISABLED is the last moment the game lets an addon change its secure buttons
+ENTERING_COMBAT = false
+local fire = Fire
+Fire = function(event, ...)
+  ENTERING_COMBAT = event == "PLAYER_REGEN_DISABLED"
+  fire(event, ...)
+  ENTERING_COMBAT = false
+end
+-- Globals an addon file leaves behind: only its own name's, SLASH_ and BINDING_ are fine
+LEAKS = {}
+setmetatable(_G, { __newindex = function(t, k, v)
+  local info = debug.getinfo(2, "Sl")
+  if info and info.source:sub(1, 1) == "@" and type(k) == "string" and not k:find("^PaladinGod")
+    and not k:find("^SLASH_") and not k:find("^BINDING_") then
+    LEAKS[#LEAKS + 1] = info.source:sub(2) .. ":" .. tostring(info.currentline) .. " " .. k
+  end
+  rawset(t, k, v)
+end })
 ''')
 
 load = lua.eval('function(src, name) return assert(loadstring(src, "@" .. name)) end')
@@ -1456,5 +1507,10 @@ check(not rnote.shown, "another class: not this addon's trainer")
 S["class"] = "PALADIN"
 
 print()
+blocked = sorted(set(G.BLOCKED.values()))
+check(not blocked, f"nothing secure touched in a fight (the game blocks it): {blocked}")
+leaks = sorted(set(G.LEAKS.values()))
+check(not leaks, f"no globals left behind: {leaks}")
+
 print("FAILURES:" if fails else f"All good ({LOCALE}).", fails if fails else "")
 sys.exit(1 if fails else 0)
