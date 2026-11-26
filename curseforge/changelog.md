@@ -1,6 +1,7 @@
 # 1.0.2
 
 - With all the ...God addons installed, PaladinGod shows nothing on characters of other classes: no samples when you move the displays, no tries from its buttons, nothing left over. Only its options and its minimap button.
+- Nor in the chat: on other classes it no longer repeats the lines about vendors, repairs and the trainer. Its commands still answer.
 
 # 1.0.1
 

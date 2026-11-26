@@ -1543,13 +1543,48 @@ check(len(list(ns.ReagentReminders().values())) > 0 and len(list(ns.GroupBuffRem
       "the shared files would warn a mage: runes, Intellect, gear and bags, herbs")
 check(list(G.ShownOnScreen().values()) == [], f"on a mage, with all of that, nothing of PaladinGod shows: {list(G.ShownOnScreen().values())}")
 out = slash("unlock")
-check(not ns.unlocked and out == [L.PREFIX + L.ONLY_PALADIN], f"moving the displays: not on a mage ({out})")
+check(not ns.unlocked and out == [L.PREFIX + L.OTHER_CLASS], f"moving the displays: not on a mage, and why ({out})")
+printed.clear()
+ns.SetUnlocked(True)  # the minimap button's or the options' way, not a command
+check(not ns.unlocked and printed == [L.PREFIX + L.OTHER_CLASS], f"from a button too, it says why: {printed}")
 ns.unlocked = True  # even forced on, as if it had been left so
 ns.RefreshAll()
 check(list(G.ShownOnScreen().values()) == [], f"nor any sample to move: {list(G.ShownOnScreen().values())}")
 ns.unlocked = False
 G.NAMED["PaladinGodMinimapButton"].shown = True
 check(G.NAMED["PaladinGodMinimapButton"].shown, "the minimap button stays")
+
+# Nor in the chat: the family's shared files speak at a vendor or a trainer, and on a mage this one
+# keeps quiet; a command typed still answers
+S["class"] = "MAGE"
+S.durability = lua.table_from({1: lua.table(40, 100)})
+S.canRepair = True
+S["items"][17031] = 0
+know(3561)
+G.MERCHANT = lua.table(17031)
+G.Fire("BAG_UPDATE_DELAYED")
+G.Fire("UPDATE_INVENTORY_DURABILITY")
+check(len(list(ns.RepairReminders().values())) > 0 and len(list(ns.ReagentReminders().values())) > 0,
+      "the shared files have something to say to a mage: worn gear, runes")
+printed.clear()
+G.Fire("MERCHANT_SHOW")
+G.Fire("CONFIRM_TALENT_WIPE", 10000, 0)
+G.RunTimers()
+check(printed == [], f"on a mage, at a vendor who repairs and sells runes, and at the trainer: nothing in the chat: {printed}")
+out = slash("help")
+check(len(out) > 0, "a command typed still answers")
+out = slash("rango" if es else "range")
+check(len(out) > 0 and out[0].startswith(L.PREFIX), f"through the addon's own print too: {out[:1]}")
+check(not ns.inCommand, "and nothing stays switched on after a command")
+S["class"] = "PALADIN"
+printed.clear()
+G.Fire("MERCHANT_SHOW")
+check(L.PREFIX + ns.REPAIR_TEXT.VENDOR % 40 in printed, f"a paladin still hears the vendor: {printed}")
+S.durability = lua.table()
+S.canRepair = False
+S["items"][17031] = None
+G.MERCHANT = lua.table()
+know(3561, on=False)
 S["class"] = "PALADIN"
 S.target = None
 S.creature = None

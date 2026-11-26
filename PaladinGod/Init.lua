@@ -168,7 +168,10 @@ local function Fill(saved, default)
 	return saved
 end
 
+-- Every ...God may be installed at once, and the family's shared files speak at a vendor or a
+-- trainer: on another class this one keeps quiet, unless you typed one of its commands
 function ns.Print(msg)
+	if not (ns.inCommand or ns.IsPaladin()) then return end
 	print(L.PREFIX .. msg)
 end
 
@@ -385,9 +388,10 @@ function ns.SetUnlocked(on)
 		ns.Print(L.NOT_IN_COMBAT)
 		return
 	end
-	-- Every ...God may be installed at once: on another class this one shows nothing, not even samples
+	-- Every ...God may be installed at once: on another class this one shows nothing, not even samples.
+	-- You asked (a command, the minimap button or the options): it says why
 	if on and not ns.IsPaladin() then
-		ns.Print(L.ONLY_PALADIN)
+		print(L.PREFIX .. L.OTHER_CLASS)
 		return
 	end
 	ns.unlocked = on
@@ -428,7 +432,11 @@ SlashCmdList.PALADINGOD = function(msg)
 	end
 	local command = ns.commands[word]
 	if command then
-		command(word)
+		-- A command you typed always answers, whatever your class
+		ns.inCommand = true
+		local ok, err = pcall(command, word)
+		ns.inCommand = false
+		if not ok then error(err, 0) end
 	else
 		Help()
 	end

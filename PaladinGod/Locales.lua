@@ -9,7 +9,7 @@ local L = {
 	NOT_IN_COMBAT = "not in combat: try again when the fight is over.",
 	UNLOCKED = "displays unlocked: drag them where you want them. /paladingod lock when you're done.",
 	LOCKED = "displays locked.",
-	ONLY_PALADIN = "PaladinGod only shows on a paladin: nothing to move on this character.",
+	OTHER_CLASS = "only for a paladin: on this character it stays hidden.",
 
 	-- Reminders
 	REMINDERS = "Reminders",
@@ -268,7 +268,7 @@ if GetLocale() == "esES" or GetLocale() == "esMX" then
 	L.NOT_IN_COMBAT = "no en combate: vuelve a probar cuando acabe la pelea."
 	L.UNLOCKED = "avisos desbloqueados: arrástralos donde quieras. /paladingod bloquear cuando acabes."
 	L.LOCKED = "avisos bloqueados."
-	L.ONLY_PALADIN = "PaladinGod solo se ve en un paladín: con este personaje no hay nada que mover."
+	L.OTHER_CLASS = "solo para un paladín: en este personaje no se muestra."
 
 	L.REMINDERS = "Avisos"
 	L.CLICK_CAST = "Clic: %s"
