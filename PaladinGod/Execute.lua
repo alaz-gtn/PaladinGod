@@ -147,7 +147,7 @@ end
 
 function ns.UpdateExecute()
 	if not holder then return end
-	local sample = ns.unlocked or GetTime() < testUntil
+	local sample = (ns.unlocked or GetTime() < testUntil) and ns.IsPaladin()
 	local on = ns.IsPaladin() and not ns.Away()
 	local enemy = on and Enemy()
 	-- Exorcism: an undead or a demon targeted, and Exorcism ready

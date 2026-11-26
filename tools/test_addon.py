@@ -261,7 +261,7 @@ function Protected(frame)
 end
 
 function CreateFrame(kind, name, parent, template)
-  local f = { scripts = {}, events = {}, kind = kind, parent = parent, template = template, shown = true, attrs = {}, width = 100 }
+  local f = { scripts = {}, events = {}, kind = kind, parent = parent, template = template, shown = true, attrs = {}, width = 100, regions = 0, frameName = name }
   setmetatable(f, { __index = function(_, k)
     if k:match("^Create") then return function() return CreateFrame("Frame") end end
     if k:match("^%u") then return function() end end
@@ -271,9 +271,9 @@ function CreateFrame(kind, name, parent, template)
   function f:RegisterEvent(e) self.events[e] = true end
   function f:RegisterUnitEvent(e) self.events[e] = true end
   function f:UnregisterEvent(e) self.events[e] = nil end
-  function f:CreateTexture() return Texture() end
+  function f:CreateTexture() self.regions = self.regions + 1 return Texture() end
   -- A text made without a template has no font until it gets one; with one, it has the template's
-  function f:CreateFontString(_, _, template) local t = Texture() t.isFont = true if template then t.font = { template } end return t end
+  function f:CreateFontString(_, _, template) self.regions = self.regions + 1 local t = Texture() t.isFont = true if template then t.font = { template } end return t end
   function f:SetAlpha(a) self.alpha = Unwrap(a) self.hiddenAlpha = issecretvalue(a) end
   function f:SetShown(v) self.shown = v and true or false end
   function f:Hide() self.shown = false end function f:Show() self.shown = true end
@@ -398,6 +398,24 @@ function ShownIcons(parent)
   return t
 end
 function Same(a, b) return rawequal(a, b) end
+-- The addon's frames that draw something and are on screen (shown, and every parent too), but the
+-- minimap button's: what a player would see
+function ShownOnScreen()
+  local list, minimap = {}, NAMED.PaladinGodMinimapButton
+  for i, f in ipairs(FRAMES) do
+    if (rawget(f, "regions") or 0) > 0 then
+      local p, visible, mine = f, true, false
+      while p do
+        if not p.shown then visible = false break end
+        if rawequal(p, minimap) then mine = true end
+        if rawequal(p, UIParent) then break end
+        p = rawget(p, "parent")
+      end
+      if visible and not mine then list[#list + 1] = (rawget(f, "frameName") or f.kind .. " #" .. i) end
+    end
+  end
+  return list
+end
 function Fire(event, ...) for _, f in ipairs(FRAMES) do if f.events[event] and f.scripts.OnEvent then f.scripts.OnEvent(f, event, ...) end end end
 ''')
 
@@ -1486,6 +1504,69 @@ G.Fire("PLAYER_SWING", 2.0, 0)
 check(not sholder.shown, "nor its swing")
 S["class"] = "PALADIN"
 S.target = None
+
+# ---------------------------------------------------------------- Another class: nothing at all on screen
+# Every ...God is installed together: on a mage, PaladinGod must show nothing but its minimap button
+# and its options, whatever would set its reminders off
+S["class"] = "MAGE"
+SPELLS = G.SPELLS
+SPELLS[3561] = "Teleport: Stormwind"
+SPELLS[1459] = "Arcane Intellect"
+know(3561, 1459, 2383)  # a mage who teleports, buffs Intellect and picks herbs
+auras()  # no food, no seal, no aura, nothing
+S["items"][17031] = 0  # no Rune of Teleportation
+S.durability = lua.table_from({1: lua.table(5, 100)})
+S.free = lua.table_from({0: 2})
+S.group = True
+S.units = lua.table_from({"party1": lua.table(name="Garrosh", **{"class": "WARRIOR"}),
+                          "party2": lua.table(name="Jaina", **{"class": "MAGE"})})
+S.unitAuras = lua.table()
+S.tracking = lua.table(lua.table(name="Find Herbs", spellID=2383, active=False, type="spell"))
+S.target = lua.table(hostile=True)
+S.creature = "Undead"
+S.health = 0.1
+S.absorb = 400
+for event in ("PLAYER_TARGET_CHANGED", "BAG_UPDATE_DELAYED", "UPDATE_INVENTORY_DURABILITY", "GROUP_ROSTER_UPDATE",
+              "MINIMAP_UPDATE_TRACKING", "UNIT_ABSORB_AMOUNT_CHANGED"):
+    G.Fire(event, "player")
+G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 1311015)
+G.Fire("PLAYER_SWING", 3.0, 0)
+G.RunTimers()
+ns.RefreshAll()
+for proc in ("infusion", "vengeance"):
+    ns.TestProcs(proc)
+ns.TestCooldowns()
+ns.TestExecute()
+ns.TestSwing()
+check(len(list(ns.ReagentReminders().values())) > 0 and len(list(ns.GroupBuffReminders().values())) > 0
+      and len(list(ns.RepairReminders().values())) > 0 and ns.GatherReminder() is not None,
+      "the shared files would warn a mage: runes, Intellect, gear and bags, herbs")
+check(list(G.ShownOnScreen().values()) == [], f"on a mage, with all of that, nothing of PaladinGod shows: {list(G.ShownOnScreen().values())}")
+out = slash("unlock")
+check(not ns.unlocked and out == [L.PREFIX + L.ONLY_PALADIN], f"moving the displays: not on a mage ({out})")
+ns.unlocked = True  # even forced on, as if it had been left so
+ns.RefreshAll()
+check(list(G.ShownOnScreen().values()) == [], f"nor any sample to move: {list(G.ShownOnScreen().values())}")
+ns.unlocked = False
+G.NAMED["PaladinGodMinimapButton"].shown = True
+check(G.NAMED["PaladinGodMinimapButton"].shown, "the minimap button stays")
+S["class"] = "PALADIN"
+S.target = None
+S.creature = None
+S.health = 1
+S.absorb = 0
+S.group = False
+S.units = lua.table()
+S.tracking = lua.table()
+S.durability = lua.table()
+S.free = lua.table()
+S["items"][17031] = None
+know(3561, 1459, 2383, on=False)
+G.Fire("GROUP_ROSTER_UPDATE")
+G.Fire("BAG_UPDATE_DELAYED")
+S.now = S.now + 10
+G.RunTimers()
+ns.RefreshAll()
 
 out = slash("help")
 check(len(out) == len(list(L.HELP.values())), "help lists the commands")

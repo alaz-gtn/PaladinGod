@@ -122,7 +122,7 @@ function ns.UpdateSeal()
 	if ns.unlocked then
 		-- Samples to drag: the reminder with the others, the seconds on their own spot
 		local key = Wanted() or "righteousness"
-		if db.enabled then
+		if db.enabled and ns.IsPaladin() then
 			ShowReminder(key)
 			Paint(key, 18)
 			base:Show()
@@ -172,7 +172,7 @@ local function Fit()
 	place:SetSize(size, size)
 	if holder then
 		holder:SetSize(size, size)
-		holder:SetShown(db.enabled and true or false)
+		holder:SetShown(db.enabled and ns.IsPaladin() and true or false)
 		if dressed then
 			ns.ReEdge(dressed)
 			pcall(ns.UseFont, dressed.text, ns.FONTS[ns.db.range.font], max(floor(size * 0.42), 10), "THICKOUTLINE")

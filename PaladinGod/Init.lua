@@ -385,6 +385,11 @@ function ns.SetUnlocked(on)
 		ns.Print(L.NOT_IN_COMBAT)
 		return
 	end
+	-- Every ...God may be installed at once: on another class this one shows nothing, not even samples
+	if on and not ns.IsPaladin() then
+		ns.Print(L.ONLY_PALADIN)
+		return
+	end
 	ns.unlocked = on
 	if not on then
 		for _, frame in pairs(ns.movers) do ns.PlaceFrame(frame) end

@@ -152,7 +152,7 @@ function ns.UpdateBarrier()
 		barrier.status:SetValue(600)
 		barrier.text:SetText(o.text and "600" or "")
 		barrier.time:SetText(o.time and "6" or "")
-		barrier:SetShown(o.enabled)
+		barrier:SetShown(o.enabled and ns.IsPaladin())
 		return
 	end
 	local now = GetTime()

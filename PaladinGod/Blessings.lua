@@ -185,7 +185,7 @@ function ns.UpdateGroup()
 	if not holder or InCombatLockdown() then return end
 	local list
 	if ns.unlocked then
-		list = db.enabled and Samples() or {}
+		list = db.enabled and ns.IsPaladin() and Samples() or {}
 	elseif db.enabled and ns.IsPaladin() and not inCombat and not ns.Away() then
 		list = Missing()
 	else

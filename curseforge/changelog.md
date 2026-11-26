@@ -1,3 +1,7 @@
+# 1.0.2
+
+- With all the ...God addons installed, PaladinGod shows nothing on characters of other classes: no samples when you move the displays, no tries from its buttons, nothing left over. Only its options and its minimap button.
+
 # 1.0.1
 
 - Fixed an "action blocked" error in combat: the game doesn't let addons close the XP food list during a fight. It's closed as the fight starts, so it no longer tries again.

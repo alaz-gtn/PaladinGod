@@ -133,6 +133,7 @@ end
 
 -- Its icon pops up now, or after the one on screen
 function ns.PulseCooldown(spell)
+	if not ns.IsPaladin() then return end
 	if playing then
 		queue[#queue + 1] = spell
 		return

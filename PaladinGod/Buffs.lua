@@ -193,7 +193,7 @@ local function Update()
 		local e = ends[slot]
 		return e and max(e - now, 0) or 0
 	end
-	if ns.unlocked then
+	if ns.unlocked and ns.IsPaladin() then
 		-- Samples to drag around
 		if db.enabled and db.aura then Remind("aura", "devotion", 0) else Clear("aura") end
 		if db.enabled and db.blessing then Remind("blessing", "might", 95) else Clear("blessing") end
@@ -435,10 +435,12 @@ local function ReagentRow(i)
 end
 
 local function UpdateFood()
-	local fed = (ns.unlocked and ns.db.food.enabled) or FoodMissing()
+	-- On another class nothing at all, not even the samples
+	local paladin = ns.IsPaladin()
+	local fed = (ns.unlocked and paladin and ns.db.food.enabled) or FoodMissing()
 	-- Under the food: your reagents running low, then your gear and bags (Repair.lua, the family's)
 	local reagents = {}
-	if ns.unlocked then
+	if ns.unlocked and paladin then
 		-- Samples to drag
 		if ns.db.reagents.enabled then
 			reagents[#reagents + 1] = { item = 21177, text = format(ns.REAGENT_TEXT.LOW, ItemName(21177), 3) }
@@ -446,7 +448,7 @@ local function UpdateFood()
 		if ns.db.repair.enabled then
 			reagents[#reagents + 1] = { icon = "Interface\\Icons\\Trade_BlackSmithing", text = format(ns.REPAIR_TEXT.WORN, 18) }
 		end
-	elseif ns.IsPaladin() and not inCombat and not ns.Away() then
+	elseif paladin and not ns.unlocked and not inCombat and not ns.Away() then
 		for _, r in ipairs(ns.ReagentReminders and ns.ReagentReminders() or {}) do reagents[#reagents + 1] = r end
 		for _, r in ipairs(ns.RepairReminders and ns.RepairReminders() or {}) do reagents[#reagents + 1] = r end
 	end

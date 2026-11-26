@@ -386,8 +386,8 @@ function ns.UpdateProcsSample()
 	if not spot then return end
 	local any = false
 	for _, e in ipairs(EFFECTS) do
-		local show = (ns.unlocked and e.showcase and db[e.key].enabled and ns.IsPaladin())
-			or GetTime() < (e.testUntil or 0)
+		local show = ns.IsPaladin() and ((ns.unlocked and e.showcase and db[e.key].enabled)
+			or GetTime() < (e.testUntil or 0))
 		ShowSample(e, show and true or false)
 		any = any or show
 	end
@@ -443,7 +443,7 @@ function ns.StyleProcs()
 			if e.holder then
 				e.holder:SetScale(scale)
 				e.holder:SetSize(width, HEIGHT)
-				e.holder:SetShown(db[e.key].enabled and true or false)
+				e.holder:SetShown(db[e.key].enabled and ns.IsPaladin() and true or false)
 			end
 		end
 	end

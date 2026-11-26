@@ -13,7 +13,7 @@ function ns.UpdateGather()
 	local pick
 	if ns.unlocked then
 		-- A sample to drag
-		if ns.db.gather.enabled then pick = { spell = ns.SpellName(ns.GATHER[1].spell), icon = ns.SpellIcon(ns.GATHER[1].spell) } end
+		if ns.db.gather.enabled and ns.IsPaladin() then pick = { spell = ns.SpellName(ns.GATHER[1].spell), icon = ns.SpellIcon(ns.GATHER[1].spell) } end
 	elseif ns.IsPaladin() and not inCombat and not ns.Away() then
 		pick = ns.GatherReminder()
 	end
