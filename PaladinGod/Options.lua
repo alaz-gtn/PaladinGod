@@ -617,6 +617,10 @@ local function Build()
 	y = Slider(page, y, L.OPT_REPAIR_BAGS, 0, 10, 1, function() return repair.bags end, function(v) repair.bags = v ns.RefreshRepair() end)
 	y = Check(page, y, ns.REPAIR_TEXT.OPT_AUTO, function() return db.repair.auto end, function(v) db.repair.auto = v end,
 		"Interface\\Icons\\INV_Misc_Coin_02")
+	y = Check(page, y, ns.GROUP_NEEDS_TEXT.OPT, function() return db.groupNeeds.enabled end,
+		function(v) db.groupNeeds.enabled = v ns.UpdateGroupNeeds() end)
+	y = Check(page, y, ns.GROUP_NEEDS_TEXT.OPT_ANYWHERE, function() return db.groupNeeds.anywhere end,
+		function(v) db.groupNeeds.anywhere = v ns.UpdateGroupNeeds() end)
 	y = Hint(page, y, L.REPAIR_HINT)
 	y = Section(page, y, L.SEC_FOOD)
 	y = Check(page, y, L.OPT_FOOD_ON, function() return db.food.enabled end, function(v) db.food.enabled = v Buffs() end,

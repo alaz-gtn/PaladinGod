@@ -39,6 +39,7 @@ local defaults = {
 	groupBuffs = { enabled = true },
 	-- Your gear under this % and your bags with this many free slots or fewer: Repair.lua, the family's
 	repair = { enabled = true, low = 25, bags = 2, auto = false },
+	groupNeeds = { enabled = true, anywhere = false, blessing = "wisdom" },
 	-- Who in your group lacks your blessing, and which one each class gets
 	group = {
 		enabled = true,
