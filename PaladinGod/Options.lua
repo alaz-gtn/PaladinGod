@@ -607,6 +607,7 @@ local function Build()
 		function() return db.reagents.enabled end, function(v) db.reagents.enabled = v ns.RefreshReagents() end,
 		ns.ItemIconOf and ns.ItemIconOf(21177))
 	y = Check(page, y, ns.REAGENT_TEXT.OPT_BUY, function() return db.reagents.buy end, function(v) db.reagents.buy = v end)
+	y = Check(page, y, ns.REAGENT_MAP_TEXT.OPT_MAP, function() return db.reagents.map end, function(v) db.reagents.map = v ns.RefreshReagentMap() end)
 	y = Hint(page, y, L.REAGENTS_HINT)
 	local repair = db.repair
 	y = Section(page, y, L.SEC_REPAIR)

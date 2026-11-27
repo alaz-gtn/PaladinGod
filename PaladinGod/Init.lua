@@ -33,7 +33,7 @@ local defaults = {
 	-- Herbalism or Mining: their tracking on, out in the world (last: the one you had on)
 	gather = { enabled = true },
 	-- Your reagents running low (Symbol of Divinity, Symbol of Kings): Reagents.lua, the family's
-	reagents = { enabled = true, buy = false },
+	reagents = { enabled = true, buy = false, map = true },
 	-- Your class's buffs someone in your group lacks: GroupBuffs.lua, the family's (none for a paladin,
 	-- whose blessings go by player in Blessings.lua)
 	groupBuffs = { enabled = true },
