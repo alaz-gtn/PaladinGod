@@ -1,3 +1,8 @@
+# 1.1.0
+
+- **Repair at a merchant** (an option, off by default): talking to a merchant who repairs fixes everything you wear and carry with your money, and says in the chat what it cost; without enough money it says so. Only this class's addon does it, so with every ...God addon on you pay once.
+- **Buy your reagents at a merchant** (an option, off by default): a merchant who sells one you spend tops you up to a handful (10 runes, 20 powders, candles or feathers, 5 seeds...), only for the spells you know and not with Reagent Economy; it buys only what your money pays for and says in the chat what it bought and spent. Works with the low reagent reminder off too.
+
 # 1.0.2
 
 - With all the ...God addons installed, PaladinGod shows nothing on characters of other classes: no samples when you move the displays, no tries from its buttons, nothing left over. Only its options and its minimap button.

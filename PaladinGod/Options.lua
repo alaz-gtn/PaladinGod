@@ -606,6 +606,7 @@ local function Build()
 	y = Check(page, y, format(L.OPT_REAGENTS, SpellName(1225503) or "Reagent Economy"),
 		function() return db.reagents.enabled end, function(v) db.reagents.enabled = v ns.RefreshReagents() end,
 		ns.ItemIconOf and ns.ItemIconOf(21177))
+	y = Check(page, y, ns.REAGENT_TEXT.OPT_BUY, function() return db.reagents.buy end, function(v) db.reagents.buy = v end)
 	y = Hint(page, y, L.REAGENTS_HINT)
 	local repair = db.repair
 	y = Section(page, y, L.SEC_REPAIR)
@@ -613,6 +614,8 @@ local function Build()
 		"Interface\\Icons\\Trade_BlackSmithing")
 	y = Slider(page, y, L.OPT_REPAIR_LOW, 5, 75, 5, function() return repair.low end, function(v) repair.low = v ns.RefreshRepair() end)
 	y = Slider(page, y, L.OPT_REPAIR_BAGS, 0, 10, 1, function() return repair.bags end, function(v) repair.bags = v ns.RefreshRepair() end)
+	y = Check(page, y, ns.REPAIR_TEXT.OPT_AUTO, function() return db.repair.auto end, function(v) db.repair.auto = v end,
+		"Interface\\Icons\\INV_Misc_Coin_02")
 	y = Hint(page, y, L.REPAIR_HINT)
 	y = Section(page, y, L.SEC_FOOD)
 	y = Check(page, y, L.OPT_FOOD_ON, function() return db.food.enabled end, function(v) db.food.enabled = v Buffs() end,
