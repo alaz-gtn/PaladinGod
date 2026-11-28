@@ -1,3 +1,7 @@
+# 1.3.3
+
+- **No more Lua errors in a group** ("Auras cannot be accessed when secret"): when a party member was fighting and you weren't, the game hides their buffs, and asking for them is an error in Forever. Now the addon checks first and leaves that member out until the fight is over.
+
 # 1.3.2
 
 - **No false "cooldown ready" pulse after a silence or a stun**: while a mob silences or stuns you, the game shows every spell cooling down, and when it ended the pulse took that for your big cooldowns coming back. Now that time doesn't count; a cooldown that was already running before the silence still pulses when it's back.
