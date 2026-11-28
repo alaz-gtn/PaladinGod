@@ -6,19 +6,27 @@ local L = ns.L
 -- but not whether it is running: the pulse comes when a spell goes from cooling down to ready.
 -- A wait shorter than any global cooldown wasn't the spell's own, so it doesn't count. Only the
 -- spells you know, each with its own switch. Two back at once come one after the other
+-- gcd: it waits for the global cooldown (Wowhead's Forever data). Divine Favor, Templar's Bulwark and
+-- Voice of Truth don't
 local SPELLS = {
-	{ key = "divineShield", ids = { 642, 1020 } }, -- Divine Shield
-	{ key = "divineProtection", ids = { 498, 5573 } }, -- Divine Protection
-	{ key = "layOnHands", ids = { 633, 2800, 10310 } }, -- Lay on Hands
-	{ key = "protection", ids = { 1022, 5599, 10278 } }, -- Blessing of Protection
+	{ key = "divineShield", ids = { 642, 1020 }, gcd = true }, -- Divine Shield
+	{ key = "divineProtection", ids = { 498, 5573 }, gcd = true }, -- Divine Protection
+	{ key = "layOnHands", ids = { 633, 2800, 10310 }, gcd = true }, -- Lay on Hands
+	{ key = "protection", ids = { 1022, 5599, 10278 }, gcd = true }, -- Blessing of Protection
 	{ key = "bulwark", ids = { 1311015 } }, -- Templar's Bulwark (Protection)
 	{ key = "divineFavor", ids = { 20216 } }, -- Divine Favor (Holy)
-	{ key = "repentance", ids = { 20066 } }, -- Repentance (Retribution)
-	{ key = "justice", ids = { 853, 5588, 5589, 10308 } }, -- Hammer of Justice
+	{ key = "repentance", ids = { 20066 }, gcd = true }, -- Repentance (Retribution)
+	{ key = "justice", ids = { 853, 5588, 5589, 10308 }, gcd = true }, -- Hammer of Justice
 	{ key = "voice", ids = { 1310897 } }, -- Voice of Truth (Forever's)
-	{ key = "intervention", ids = { 19752 } }, -- Divine Intervention
+	{ key = "intervention", ids = { 19752 }, gcd = true }, -- Divine Intervention
 }
 ns.COOLDOWN_SPELLS = SPELLS
+-- Spells with no cooldown of their own that wait for the global one, known from the first levels:
+-- cooling down, it can only be the global cooldown or a silence
+local REFERENCES = {
+	{ key = "holyLight", ids = { 635 } }, -- Holy Light
+	{ key = "righteousness", ids = { 21084, 20154 } }, -- Seal of Righteousness
+}
 local DEFAULT_POINT = { "CENTER", "CENTER", 0, 80 }
 local GCD_MAX = 2.5 -- no global cooldown lasts this long: a longer wait was the spell's own
 local POLL = 0.1
@@ -87,6 +95,33 @@ local function Locked(spell)
 		local count = C_LossOfControl.GetActiveLossOfControlDataCount()
 		if not ns.IsSecret(count) and type(count) == "number" then return count > 0 end
 	end
+end
+
+-- In a fight the game may not say a thing about the global cooldown (61304 unread, or always "not
+-- running"), and spells cast one after another chain it for longer than any one. While it runs, every
+-- spell that waits for it shows cooling down at once; one of them ready says it isn't running, so
+-- another one still cooling down is on its own cooldown. Read once per look, for all of them
+local coolingNow = {}
+
+-- Is it cooling down on its own? true: another one that waits for the global cooldown is ready.
+-- false: all of them are cooling down, none on a cooldown of its own that we know of. nil when it
+-- can't tell (it skips the global cooldown, or nothing else to compare with)
+local function Alone(entry)
+	if not entry.gcd then return nil end
+	local any = false
+	for _, other in ipairs(SPELLS) do
+		if other ~= entry and other.gcd then
+			local c = coolingNow[other.key]
+			if c == false then return true end
+			if c == true and not (other.real or other.own) then any = true end
+		end
+	end
+	for _, other in ipairs(REFERENCES) do
+		local c = coolingNow[other.key]
+		if c == false then return true end
+		if c == true then any = true end
+	end
+	if any then return false end
 end
 
 -- Is that its own cooldown and not the global one? nil when the game won't say
@@ -218,10 +253,15 @@ local function Check(entry)
 	entry.blind = nil
 	-- Half a second more: the game may say the silence is over a moment before the spells
 	if cooling and not entry.real and Locked(spell) then entry.lockedAt = now end
+	local alone
+	if cooling and not entry.real and not entry.own then alone = Alone(entry) end
 	if cooling and not entry.real and entry.lockedAt and now - entry.lockedAt < 0.5 then
 		-- What it shows now may be the silence's: its wait starts again when that is over
 		entry.own, entry.since = false, now
+	elseif alone == false then
+		entry.since = now -- all of them at once: the global cooldown or a silence. Its wait starts afresh
 	elseif cooling then
+		if alone then entry.own, entry.real = true, true end
 		local own = not entry.own and Own(spell, info)
 		if own then entry.own, entry.real = true, true end
 		-- Only the global cooldown, as the game says: its time doesn't count. Spells cast one after
@@ -247,6 +287,23 @@ local function Check(entry)
 	end
 end
 
+-- One look at all of them: is any still to watch?
+local function Look()
+	for _, list in ipairs({ SPELLS, REFERENCES }) do
+		for _, entry in ipairs(list) do
+			local c
+			if entry.spell and (entry.gcd or list == REFERENCES) then c = Cooling(entry.spell) end
+			coolingNow[entry.key] = c
+		end
+	end
+	local busy = false
+	for _, entry in ipairs(SPELLS) do
+		Check(entry)
+		busy = busy or entry.since or entry.own
+	end
+	return busy
+end
+
 -- Watched often only while one is cooling down, or just cast
 local poller = CreateFrame("Frame")
 poller:Hide()
@@ -255,25 +312,16 @@ poller:SetScript("OnUpdate", function(self, elapsed)
 	waited = waited + elapsed
 	if waited < POLL then return end
 	waited = 0
-	local busy = false
-	for _, entry in ipairs(SPELLS) do
-		Check(entry)
-		busy = busy or entry.since or entry.own
-	end
-	if not busy then self:Hide() end
+	if not Look() then self:Hide() end
 end)
 
 local function Watch()
-	local busy = false
-	for _, entry in ipairs(SPELLS) do
-		Check(entry)
-		busy = busy or entry.since or entry.own
-	end
-	if busy then poller:Show() end
+	if Look() then poller:Show() end
 end
 
 local function Learn()
 	for _, entry in ipairs(SPELLS) do entry.spell = Resolve(entry) end
+	for _, entry in ipairs(REFERENCES) do entry.spell = Resolve(entry) end
 end
 
 -- The options' button: one of them, or the first you know

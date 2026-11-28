@@ -1365,6 +1365,59 @@ cooldown(642, isActive=False, duration=0, startTime=0, isOnGCD=False)
 poll()
 check(cplace.shown and cart.icon.tex == 642, "cooling down before a silence: its pulse still comes")
 frame(2)
+# The game may not say a thing about the global cooldown in a fight (no 61304, every time hidden):
+# all that wait for it show cooling down at once. Divine Shield, Hammer of Justice, and Holy Light and
+# Seal of Righteousness (no cooldown of their own). Divine Favor skips it: ready all along, it says nothing
+G.COOLDOWNS[61304] = None
+SHARED = (642, 853, 635, 20154)
+know(20216)
+cooldown(20216, isActive=False, duration=0, startTime=0, isOnGCD=False)
+
+
+def all_cooling(active, only=SHARED):
+    for i in only:
+        cooldown(i, isActive=active, duration=G.SECRET, startTime=G.SECRET, isOnGCD=G.SECRET)
+
+
+def gcd_chain():
+    for _ in range(4):
+        all_cooling(True)
+        G.Fire("SPELL_UPDATE_COOLDOWN")
+        for _ in range(7):
+            S.now = S.now + 0.2
+            poll()
+    all_cooling(False)
+    G.Fire("SPELL_UPDATE_COOLDOWN")
+    poll()
+
+
+gcd_chain()
+check(not cplace.shown and list(cd.queue.values()) == [],
+      "in combat, four global cooldowns in a row, the game saying nothing of them: no pulse")
+# The game saying the global one never runs: still all of them at once, so not theirs
+G.COOLDOWNS[61304] = lua.table(isActive=False, duration=0, startTime=0)
+gcd_chain()
+check(not cplace.shown and list(cd.queue.values()) == [],
+      "the game says the global cooldown isn't running, and all of them cool down together: no pulse")
+G.COOLDOWNS[61304] = None
+# Divine Shield cast in the fight, unseen: once the others are ready it still cools down
+G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", G.SECRET)
+all_cooling(True)
+G.Fire("SPELL_UPDATE_COOLDOWN")
+S.now = S.now + 1.5
+all_cooling(False, (853, 635, 20154))
+poll()
+check(cd.spells.divineShield.own and not cd.spells.justice.own, "Divine Shield cooling down with the others ready: its own")
+for _ in range(10):
+    S.now = S.now + 1
+    poll()
+all_cooling(False, (642,))
+poll()
+check(cplace.shown and cart.icon.tex == 642 and list(cd.queue.values()) == [], "Divine Shield back: its pulse, and only its")
+frame(2)
+for i in SHARED + (20216,):
+    G.COOLDOWNS[i] = None
+know(20216, on=False)
 S.combat = False
 # Two back at once: one after the other
 know(498)  # Divine Protection

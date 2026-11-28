@@ -1,3 +1,7 @@
+# 1.3.4
+
+- **No false "cooldown ready" pulse in a fight, even when the game says nothing of the global cooldown**: casting one spell after another, every spell shows cooling down at once, and in combat Forever may not say that's only the global cooldown; a chain of them longer than 2.5 s passed for one of your big cooldowns coming back. Now the addon compares them with Holy Light and your other spells that wait for the global cooldown: all cooling down together isn't any one's own, and one still cooling down while another is ready is. Divine Favor, Templar's Bulwark and Voice of Truth skip the global cooldown, so they aren't used for that.
+
 # 1.3.3
 
 - **No more Lua errors in a group** ("Auras cannot be accessed when secret"): when a party member was fighting and you weren't, the game hides their buffs, and asking for them is an error in Forever. Now the addon checks first and leaves that member out until the fight is over.
