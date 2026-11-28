@@ -161,6 +161,12 @@ IsInInstance = function() return G.instance, G.instance and "party" or "none" en
 -- Spell cooldowns, by spell: what C_Spell.GetSpellCooldown hands over
 COOLDOWNS = {}
 C_Spell.GetSpellCooldown = function(id) return COOLDOWNS[id] end
+-- Its timer, as the game may give it in a fight: running while the spell shows cooling down, the
+-- global cooldown too (it can't tell them apart)
+C_Spell.GetSpellCooldownDuration = function(id)
+  local cd = COOLDOWNS[id]
+  return { IsZero = function() if cd and cd.secretZero then return SECRET end return not (cd and cd.isActive and not cd.gcd) end }
+end
 C_NamePlate = { GetNamePlateForUnit = function() return G.plate end }
 UnitExists = function(u)
   if u == "target" then return G.target ~= nil end
@@ -1278,6 +1284,48 @@ S.now = S.now + 1.4
 cooldown(642, isActive=False, duration=G.SECRET, isOnGCD=G.SECRET)
 poll()
 check(not cplace.shown, "a hidden global cooldown: no pulse")
+# In combat, instant spells one after another: the global cooldown never stops, and the game won't
+# say whose cooldown it is (its timer may even count the global one)
+
+
+def gcd(active):
+    G.COOLDOWNS[61304] = lua.table(isActive=active, duration=G.SECRET, startTime=G.SECRET)
+
+
+def hidden_cd(spell):
+    cooldown(spell, isActive=True, duration=G.SECRET, startTime=G.SECRET, isOnGCD=G.SECRET)
+
+
+for _ in range(5):
+    gcd(True)
+    hidden_cd(642)
+    G.Fire("SPELL_UPDATE_COOLDOWN")
+    for _ in range(7):
+        S.now = S.now + 0.2
+        poll()
+gcd(False)
+cooldown(642, isActive=False, duration=G.SECRET, startTime=G.SECRET, isOnGCD=G.SECRET)
+poll()
+check(not cplace.shown, "in combat, five global cooldowns in a row: no pulse")
+# Divine Shield cast in a fight, unseen (its number hidden): once the global cooldown is over it
+# still cools down, so it's its own
+G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", G.SECRET)
+gcd(True)
+hidden_cd(642)
+G.Fire("SPELL_UPDATE_COOLDOWN")
+S.now = S.now + 1.5
+gcd(False)
+poll()
+for i in range(9):
+    gcd(i % 2 == 0)
+    S.now = S.now + 1.5
+    poll()
+cooldown(642, isActive=False, duration=G.SECRET, startTime=G.SECRET, isOnGCD=G.SECRET)
+gcd(True)
+poll()
+check(cplace.shown and cart.icon.tex == 642, "in combat, Divine Shield back after its own cooldown, even under other global cooldowns: pulse")
+frame(2)
+G.COOLDOWNS[61304] = None
 S.combat = False
 # Two back at once: one after the other
 know(498)  # Divine Protection

@@ -61,6 +61,21 @@ local function Cooling(spell)
 	return active and true or false, info
 end
 
+-- Is the global cooldown running? nil when the game won't say. While it runs, any spell shows as
+-- cooling down: that alone says nothing about its own cooldown
+local GCD_SPELL = 61304
+local function GlobalRunning()
+	local info = C_Spell.GetSpellCooldown(GCD_SPELL)
+	if ns.IsSecret(info) or type(info) ~= "table" then return nil end
+	local active = info.isActive
+	if ns.IsSecret(active) or active == nil then
+		local duration = info.duration
+		if ns.IsSecret(duration) or duration == nil then return nil end
+		active = duration > 0
+	end
+	return active and true or false
+end
+
 -- Is that its own cooldown and not the global one? nil when the game won't say
 local function Own(spell, info)
 	local duration = info.duration
@@ -70,7 +85,11 @@ local function Own(spell, info)
 	if C_Spell.GetSpellCooldownDuration then
 		local timer = C_Spell.GetSpellCooldownDuration(spell, true)
 		local zero = timer and timer.IsZero and timer:IsZero()
-		if not ns.IsSecret(zero) and zero ~= nil then return not zero end
+		-- While the global one runs this may count it too: it can't tell then
+		if not ns.IsSecret(zero) and zero ~= nil then
+			if not zero and GlobalRunning() ~= false then return nil end
+			return not zero
+		end
 	end
 end
 
@@ -185,15 +204,28 @@ local function Check(entry)
 	local stale = entry.blind and now - entry.blind > 1
 	entry.blind = nil
 	if cooling then
-		if not entry.since then entry.since = now end
-		if not entry.own and Own(spell, info) then entry.own = true end
+		local own = not entry.own and Own(spell, info)
+		if own then entry.own, entry.real = true, true end
+		-- Only the global cooldown, as the game says: its time doesn't count. Spells cast one after
+		-- another chain them for longer than any one, and that isn't the spell's own coming back.
+		-- In combat it may not say whose it is: while the global one runs, the wait doesn't start
+		local global = not entry.own and own == nil and GlobalRunning()
+		if entry.own then
+			entry.since = entry.since or now
+			entry.real = true
+		elseif own == false or global and not entry.real then
+			entry.since = now -- the global one, or maybe: its wait starts afresh
+		else
+			entry.since = entry.since or now
+			if global == false then entry.real = true end -- the global one is over and it still cools down
+		end
 	elseif entry.since then
 		if not stale and (entry.own or now - entry.since > GCD_MAX) and Wanted(entry) and not ns.Away() then
 			ns.PulseCooldown(spell)
 		end
-		entry.since, entry.own = nil, false
+		entry.since, entry.own, entry.real = nil, false, nil
 	elseif entry.own and entry.castAt and now - entry.castAt > 1 then
-		entry.own = false -- the cast never showed a cooldown
+		entry.own, entry.real = false, nil -- the cast never showed a cooldown
 	end
 end
 

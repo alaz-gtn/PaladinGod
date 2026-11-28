@@ -1,3 +1,7 @@
+# 1.3.1
+
+- **No more false "cooldown ready" pulses in combat**: casting instant spells one after another chains global cooldowns for longer than any one, and the game hides whose cooldown it is in a fight; the pulse took that for a big cooldown coming back. Now the global cooldown's time doesn't count, and a spell only pulses once it's been seen cooling down with the global cooldown over.
+
 # 1.3.0
 
 - **Missing buffs row** in dungeons and raids: a small row with the buffs your group can give you and you don't have (Arcane Intellect with a mage in the group, Fortitude with a priest, Mark of the Wild with a druid, a blessing per paladin). Click one to ask for it in the group chat ("Missing Arcane Intellect"); the paladin's lets you pick the blessing to ask for, and remembers it. Your own class's buffs are left out, and nothing in combat. Drag it with Move displays; an option turns it off, another shows it outside dungeons too.
