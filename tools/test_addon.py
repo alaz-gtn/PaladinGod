@@ -161,6 +161,9 @@ IsInInstance = function() return G.instance, G.instance and "party" or "none" en
 -- Spell cooldowns, by spell: what C_Spell.GetSpellCooldown hands over
 COOLDOWNS = {}
 C_Spell.GetSpellCooldown = function(id) return COOLDOWNS[id] end
+-- Silenced, stunned or locked out: how many of those are on you
+G.LOC = 0
+C_LossOfControl = { GetActiveLossOfControlDataCount = function() return G.LOC end }
 -- Its timer, as the game may give it in a fight: running while the spell shows cooling down, the
 -- global cooldown too (it can't tell them apart)
 C_Spell.GetSpellCooldownDuration = function(id)
@@ -1326,6 +1329,42 @@ poll()
 check(cplace.shown and cart.icon.tex == 642, "in combat, Divine Shield back after its own cooldown, even under other global cooldowns: pulse")
 frame(2)
 G.COOLDOWNS[61304] = None
+# A mob silences you: every spell shows cooling down for 4 s, and none of them was
+S.LOC = 1
+for _ in range(20):
+    hidden_cd(642)
+    S.now = S.now + 0.2
+    poll()
+S.LOC = 0
+cooldown(642, isActive=False, duration=G.SECRET, startTime=G.SECRET, isOnGCD=G.SECRET)
+poll()
+check(not cplace.shown, "a silence ending: no pulse")
+S.LOC = 1
+cooldown(642, isActive=True, duration=4, startTime=S.now, isOnGCD=False)
+G.Fire("SPELL_UPDATE_COOLDOWN")
+for _ in range(20):
+    S.now = S.now + 0.2
+    poll()
+S.LOC = 0  # the game says it's over a moment before the spells
+S.now = S.now + 0.2
+poll()
+cooldown(642, isActive=False, duration=0, startTime=0, isOnGCD=False)
+S.now = S.now + 0.1
+poll()
+check(not cplace.shown, "a silence ending, its time showing: no pulse")
+# Divine Shield already cooling down when the silence comes: it still pulses when it's back
+G.Fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast", 642)
+cooldown(642, isActive=True, duration=300, startTime=S.now, isOnGCD=False)
+G.Fire("SPELL_UPDATE_COOLDOWN")
+S.LOC = 1
+S.now = S.now + 4
+poll()
+S.LOC = 0
+S.now = S.now + 296
+cooldown(642, isActive=False, duration=0, startTime=0, isOnGCD=False)
+poll()
+check(cplace.shown and cart.icon.tex == 642, "cooling down before a silence: its pulse still comes")
+frame(2)
 S.combat = False
 # Two back at once: one after the other
 know(498)  # Divine Protection

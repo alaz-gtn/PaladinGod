@@ -1,3 +1,7 @@
+# 1.3.2
+
+- **No false "cooldown ready" pulse after a silence or a stun**: while a mob silences or stuns you, the game shows every spell cooling down, and when it ended the pulse took that for your big cooldowns coming back. Now that time doesn't count; a cooldown that was already running before the silence still pulses when it's back.
+
 # 1.3.1
 
 - **No more false "cooldown ready" pulses in combat**: casting instant spells one after another chains global cooldowns for longer than any one, and the game hides whose cooldown it is in a fight; the pulse took that for a big cooldown coming back. Now the global cooldown's time doesn't count, and a spell only pulses once it's been seen cooling down with the global cooldown over.

@@ -76,6 +76,19 @@ local function GlobalRunning()
 	return active and true or false
 end
 
+-- Silenced, stunned, or your school locked out: the game shows every spell cooling down until it
+-- ends, and that says nothing about their own cooldowns. nil when the game won't say
+local function Locked(spell)
+	if C_Spell.GetSpellLossOfControlCooldown then
+		local _, duration = C_Spell.GetSpellLossOfControlCooldown(spell)
+		if not ns.IsSecret(duration) and type(duration) == "number" and duration > 0 then return true end
+	end
+	if C_LossOfControl and C_LossOfControl.GetActiveLossOfControlDataCount then
+		local count = C_LossOfControl.GetActiveLossOfControlDataCount()
+		if not ns.IsSecret(count) and type(count) == "number" then return count > 0 end
+	end
+end
+
 -- Is that its own cooldown and not the global one? nil when the game won't say
 local function Own(spell, info)
 	local duration = info.duration
@@ -203,7 +216,12 @@ local function Check(entry)
 	-- After a stretch where the game wouldn't say, what it says now may be old news
 	local stale = entry.blind and now - entry.blind > 1
 	entry.blind = nil
-	if cooling then
+	-- Half a second more: the game may say the silence is over a moment before the spells
+	if cooling and not entry.real and Locked(spell) then entry.lockedAt = now end
+	if cooling and not entry.real and entry.lockedAt and now - entry.lockedAt < 0.5 then
+		-- What it shows now may be the silence's: its wait starts again when that is over
+		entry.own, entry.since = false, now
+	elseif cooling then
 		local own = not entry.own and Own(spell, info)
 		if own then entry.own, entry.real = true, true end
 		-- Only the global cooldown, as the game says: its time doesn't count. Spells cast one after
@@ -223,7 +241,7 @@ local function Check(entry)
 		if not stale and (entry.own or now - entry.since > GCD_MAX) and Wanted(entry) and not ns.Away() then
 			ns.PulseCooldown(spell)
 		end
-		entry.since, entry.own, entry.real = nil, false, nil
+		entry.since, entry.own, entry.real, entry.lockedAt = nil, false, nil, nil
 	elseif entry.own and entry.castAt and now - entry.castAt > 1 then
 		entry.own, entry.real = false, nil -- the cast never showed a cooldown
 	end
